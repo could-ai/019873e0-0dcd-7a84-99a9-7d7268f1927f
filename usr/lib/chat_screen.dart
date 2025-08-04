@@ -16,15 +16,27 @@ class _ChatScreenState extends State<ChatScreen> {
     _textController.clear();
     if (text.trim().isEmpty) return;
 
+    final userMessage = ChatMessage(
+      text: text,
+      sender: 'Me',
+      timestamp: DateTime.now(),
+    );
+
     setState(() {
-      _messages.insert(
-        0,
-        ChatMessage(
-          text: text,
-          sender: 'Me', 
-          timestamp: DateTime.now(),
-        ),
-      );
+      _messages.insert(0, userMessage);
+    });
+
+    // Simulate a bot response
+    final botMessage = ChatMessage(
+      text: 'This is a simulated response to "${userMessage.text}"',
+      sender: 'Bot',
+      timestamp: DateTime.now().add(const Duration(seconds: 1)),
+    );
+
+    Future.delayed(const Duration(milliseconds: 500), () {
+      setState(() {
+        _messages.insert(0, botMessage);
+      });
     });
   }
 
@@ -33,6 +45,7 @@ class _ChatScreenState extends State<ChatScreen> {
       data: IconThemeData(color: Theme.of(context).colorScheme.secondary),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 8.0),
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
         child: Row(
           children: <Widget>[
             Flexible(
@@ -88,29 +101,42 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildMessageItem(ChatMessage message) {
+    final bool isMe = message.sender == 'Me';
+    final alignment = isMe ? MainAxisAlignment.end : MainAxisAlignment.start;
+    final crossAlignment = isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start;
+    
+    final avatar = Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: CircleAvatar(child: Text(message.sender[0])),
+    );
+
+    final messageBody = Flexible(
+      child: Column(
+        crossAxisAlignment: crossAlignment,
+        children: <Widget>[
+          Text(message.sender, style: Theme.of(context).textTheme.titleMedium),
+          Container(
+            margin: const EdgeInsets.only(top: 5.0),
+            padding: const EdgeInsets.all(10.0),
+            decoration: BoxDecoration(
+              color: isMe ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.secondary,
+              borderRadius: BorderRadius.circular(15.0),
+            ),
+            child: Text(
+              message.text,
+              style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+            ),
+          ),
+        ],
+      ),
+    );
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 10.0),
       child: Row(
+        mainAxisAlignment: alignment,
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: <Widget>[
-          Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: <Widget>[
-                Text(message.sender, style: Theme.of(context).textTheme.titleMedium),
-                Container(
-                  margin: const EdgeInsets.only(top: 5.0),
-                  child: Text(message.text),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            margin: const EdgeInsets.only(left: 16.0),
-            child: CircleAvatar(child: Text(message.sender[0])),
-          ),
-        ],
+        children: isMe ? [messageBody, avatar] : [avatar, messageBody],
       ),
     );
   }
